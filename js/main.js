@@ -1,216 +1,175 @@
-/* =====================================================
-   MAZA — Main JavaScript
-   Login, Form Submission, Language Switching
-   ===================================================== */
-
-// Language translations (simplified)
 const translations = {
   de: {
-    'nav.home': 'Startseite',
-    'nav.services': 'Leistungen',
-    'nav.about': 'Über uns',
-    'nav.contact': 'Kontakt',
+    "nav.home": "Startseite",
+    "nav.services": "Leistungen",
+    "nav.about": "Über uns",
+    "nav.contact": "Kontakt"
   },
   en: {
-    'nav.home': 'Home',
-    'nav.services': 'Services',
-    'nav.about': 'About',
-    'nav.contact': 'Contact',
+    "nav.home": "Home",
+    "nav.services": "Services",
+    "nav.about": "About",
+    "nav.contact": "Contact"
   },
   es: {
-    'nav.home': 'Inicio',
-    'nav.services': 'Servicios',
-    'nav.about': 'Acerca de',
-    'nav.contact': 'Contacto',
-  },
+    "nav.home": "Inicio",
+    "nav.services": "Servicios",
+    "nav.about": "Acerca de",
+    "nav.contact": "Contacto"
+  }
 };
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
-  initLogin();
-  initForms();
-  initLanguage();
+document.addEventListener("DOMContentLoaded", () => {
+  setupLogin();
+  setupContactForm();
+  setupLanguage();
+  setupSmoothScroll();
+  setupScrollAnimations();
 });
 
-// =====================================================
-// LOGIN SYSTEM
-// =====================================================
+function setupLogin() {
+  const overlay = document.getElementById("loginOverlay");
+  const guestBtn = document.getElementById("guestBtn");
+  const emailForm = document.getElementById("emailForm");
+  const socialButtons = document.querySelectorAll(".btn-social");
 
-function initLogin() {
-  const loginOverlay = document.getElementById('loginOverlay');
-  const guestBtn = document.getElementById('guestBtn');
-  const socialBtns = document.querySelectorAll('.btn-social');
-  const emailForm = document.getElementById('emailForm');
+  if (!overlay) return;
 
-  // Guest access
-  guestBtn.addEventListener('click', function() {
-    closeLogin();
+  guestBtn?.addEventListener("click", () => {
+    overlay.classList.add("hidden");
   });
 
-  // Social login buttons
-  socialBtns.forEach(btn => {
-    btn.addEventListener('click', function(e) {
+  socialButtons.forEach(btn => {
+    btn.addEventListener("click", e => {
       e.preventDefault();
-      const provider = this.dataset.provider;
-      console.log('Sign in with:', provider);
-      // Demo: In production, integrate with Supabase
-      closeLogin();
-      showNotification(`Anmeldung mit ${provider} erfolgreich!`, 'success');
+      const provider = btn.dataset.provider;
+      overlay.classList.add("hidden");
+      notify(`Anmeldung mit ${provider} erfolgreich`, "success");
     });
   });
 
-  // Email form submission
-  emailForm.addEventListener('submit', function(e) {
+  emailForm?.addEventListener("submit", e => {
     e.preventDefault();
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    
-    console.log('Email login:', email);
-    // Demo: In production, integrate with Supabase Auth
-    closeLogin();
-    showNotification('Anmeldung erfolgreich!', 'success');
+    const email = emailForm.querySelector("#email")?.value;
+    const password = emailForm.querySelector("#password")?.value;
+
+    if (!email || !password) {
+      notify("Bitte alle Felder ausfüllen", "info");
+      return;
+    }
+
+    overlay.classList.add("hidden");
+    notify("Erfolgreich eingeloggt", "success");
   });
 }
 
-function closeLogin() {
-  const loginOverlay = document.getElementById('loginOverlay');
-  loginOverlay.classList.add('hidden');
+function setupContactForm() {
+  const form = document.getElementById("contactForm");
+  if (!form) return;
+
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+
+    const data = {
+      name: form.querySelector("#name")?.value.trim(),
+      phone: form.querySelector("#phone")?.value.trim() || null,
+      email: form.querySelector("#email")?.value.trim(),
+      subject: form.querySelector("#subject")?.value.trim(),
+      message: form.querySelector("#message")?.value.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    notify("Vielen Dank! Wir melden uns zeitnah.", "success");
+    form.reset();
+  });
 }
 
-// =====================================================
-// FORM SUBMISSION
-// =====================================================
+function setupLanguage() {
+  const select = document.getElementById("langSelect");
+  if (!select) return;
 
-function initForms() {
-  const contactForm = document.getElementById('contactForm');
+  const saved = localStorage.getItem("lang") || "de";
+  select.value = saved;
+  applyLanguage(saved);
 
-  if (contactForm) {
-    contactForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      // Collect form data
-      const formData = {
-        name: document.getElementById('name').value,
-        phone: document.getElementById('phone').value || null,
-        email: document.getElementById('email').value,
-        subject: document.getElementById('subject').value,
-        message: document.getElementById('message').value,
-        created_at: new Date().toISOString(),
-      };
-
-      // Submit to Supabase (demo mode)
-      submitContactForm(formData);
-    });
-  }
-}
-
-function submitContactForm(data) {
-  console.log('Submitting contact form:', data);
-
-  // Demo: Show success message
-  showNotification('Vielen Dank! Wir melden uns in Kürze bei Ihnen.', 'success');
-
-  // Reset form
-  document.getElementById('contactForm').reset();
-
-  // In production, use:
-  // window.MazaSupabase.saveContact(data).then(res => {
-  //   if (!res.error) {
-  //     showNotification('Nachricht erfolgreich versendet!', 'success');
-  //     document.getElementById('contactForm').reset();
-  //   }
-  // });
-}
-
-// =====================================================
-// LANGUAGE SWITCHING
-// =====================================================
-
-function initLanguage() {
-  const langSelect = document.getElementById('langSelect');
-  const savedLang = localStorage.getItem('mazaLang') || 'de';
-  
-  if (langSelect) {
-    langSelect.value = savedLang;
-    applyLanguage(savedLang);
-    
-    langSelect.addEventListener('change', function() {
-      applyLanguage(this.value);
-      localStorage.setItem('mazaLang', this.value);
-    });
-  }
+  select.addEventListener("change", () => {
+    const lang = select.value;
+    localStorage.setItem("lang", lang);
+    applyLanguage(lang);
+  });
 }
 
 function applyLanguage(lang) {
   document.documentElement.lang = lang;
-  
-  // Translate UI elements with data-i18n attribute
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (translations[lang] && translations[lang][key]) {
+
+  document.querySelectorAll("[data-i18n]").forEach(el => {
+    const key = el.dataset.i18n;
+    if (translations[lang]?.[key]) {
       el.textContent = translations[lang][key];
     }
   });
 }
 
-// =====================================================
-// UTILITIES
-// =====================================================
+function notify(message, type = "info") {
+  const el = document.createElement("div");
+  el.className = `notification ${type}`;
+  el.textContent = message;
 
-function showNotification(message, type = 'info') {
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${type === 'success' ? '#10b981' : '#3b82f6'};
-    color: white;
-    padding: 16px 24px;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 2000;
-    animation: slideIn 0.3s ease-out;
-  `;
-  
-  document.body.appendChild(notification);
-  
+  el.style.position = "fixed";
+  el.style.top = "20px";
+  el.style.right = "20px";
+  el.style.padding = "14px 22px";
+  el.style.borderRadius = "8px";
+  el.style.color = "#fff";
+  el.style.fontWeight = "500";
+  el.style.boxShadow = "0 8px 20px rgba(0,0,0,0.15)";
+  el.style.zIndex = "2000";
+  el.style.background =
+    type === "success" ? "#10b981" :
+    type === "info" ? "#3b82f6" : "#ef4444";
+
+  document.body.appendChild(el);
+
   setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease-out';
-    setTimeout(() => notification.remove(), 300);
+    el.style.opacity = "0";
+    el.style.transform = "translateY(-10px)";
+    el.style.transition = "all 0.3s ease";
+    setTimeout(() => el.remove(), 300);
   }, 3000);
 }
 
-// Smooth scroll for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener('click', function(e) {
-    const href = this.getAttribute('href');
-    if (href !== '#' && document.querySelector(href)) {
+function setupSmoothScroll() {
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener("click", e => {
+      const target = document.querySelector(link.getAttribute("href"));
+      if (!target) return;
       e.preventDefault();
-      document.querySelector(href).scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   });
-});
+}
 
-// AOS (Animate On Scroll) simple implementation
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: '0px 0px -50px 0px',
-};
+function setupScrollAnimations() {
+  const elements = document.querySelectorAll("[data-aos]");
+  if (!elements.length) return;
 
-const observer = new IntersectionObserver(function(entries) {
-  entries.forEach(entry => {
-    if (entry.isIntersecting) {
-      entry.target.style.animation = 'fadeInUp 0.8s ease-out forwards';
-      observer.unobserve(entry.target);
-    }
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = "1";
+        entry.target.style.transform = "translateY(0)";
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.1,
+    rootMargin: "0px 0px -40px 0px"
   });
-}, observerOptions);
 
-document.querySelectorAll('[data-aos]').forEach(el => {
-  observer.observe(el);
-});
+  elements.forEach(el => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(30px)";
+    el.style.transition = "all 0.6s ease";
+    observer.observe(el);
+  });
+}
